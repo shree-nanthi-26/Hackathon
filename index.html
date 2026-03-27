@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ocean Depths — An Interactive Journey Through the Deep Sea</title>
+  <meta name="description" content="Dive into an immersive cinematic underwater journey through the ocean depths. Explore the sunlight zone, twilight zone, midnight zone, and the abyss." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&family=Orbitron:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════ GLOBAL HUD & OVERLAYS ══════════════════════ -->
+  <div id="bgBubbleLayer"></div>
+  <div class="immersive-overlay" id="immersiveOverlay"></div>
+
+  <div class="water-distortion"></div>
+  <svg style="display:none">
+    <filter id="waterFilter">
+      <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="3" seed="1">
+        <animate attributeName="baseFrequency" dur="20s" values="0.01;0.015;0.01" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" scale="25" />
+    </filter>
+  </svg>
+  
+  <!-- ══════════════════════ LOADER ══════════════════════ -->
+  <div id="loader" class="loader">
+    <div class="loader-waves">
+      <div class="loader-wave loader-wave--1"></div>
+      <div class="loader-wave loader-wave--2"></div>
+      <div class="loader-wave loader-wave--3"></div>
+    </div>
+    <div class="loader-bg-bubbles" id="loaderBgBubbles"></div>
+    <div class="loader-content">
+      <div class="loader-ring">
+        <div class="loader-ring__bubbles"></div>
+        <div class="loader-diver-wrap" id="loaderDiverWrap">
+          <div class="loader-diver">🤿</div>
+          <div class="loader-diver-trail"></div>
+        </div>
+      </div>
+      <div class="loader-text-block">
+        <p class="loader-label">PREPARING DIVE</p>
+        <h2 class="loader-title">Ocean Depths</h2>
+        <p class="loader-sub" id="loaderSubText">Calibrating depth sensors...</p>
+        <div class="loader-bar-wrap">
+          <div class="loader-bar"><div class="loader-fill" id="loaderFill"></div></div>
+          <p class="loader-pct" id="loaderPct">0%</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ HUD ══════════════════════ -->
+
+  <!-- Scroll progress bar (top) -->
+  <div class="scroll-progress" id="scrollProgress"></div>
+
+  <!-- Journey Tracker (Left HUD) — Restored Original Wave Style -->
+  <div class="journey-tracker journey-tracker--waves" id="journeyTracker">
+    <div class="journey-tracker__waves">
+      <div class="journey-wave journey-wave--1"></div>
+      <div class="journey-wave journey-wave--2"></div>
+      <div class="journey-wave journey-wave--3"></div>
+      <div class="journey-tracker__line-fill" id="journeyFill"></div>
+    </div>
+    <div class="journey-nodes">
+      <div class="journey-node active" data-section="hero">
+        <span class="journey-node__icon">🌅</span>
+        <span class="journey-node__label">Surface</span>
+      </div>
+      <div class="journey-node" data-section="sunlight">
+        <span class="journey-node__icon">☀️</span>
+        <span class="journey-node__label">Sunlight</span>
+      </div>
+      <div class="journey-node" data-section="twilight">
+        <span class="journey-node__icon">🌙</span>
+        <span class="journey-node__label">Twilight</span>
+      </div>
+      <div class="journey-node" data-section="midnight">
+        <span class="journey-node__icon">🔴</span>
+        <span class="journey-node__label">Midnight</span>
+      </div>
+      <div class="journey-node" data-section="abyss">
+        <span class="journey-node__icon">🌑</span>
+        <span class="journey-node__label">Abyss</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Depth Meter (enhanced with milestones) -->
+  <div class="depth-meter" id="depthMeter">
+    <div class="depth-meter__header">
+      <span class="depth-meter__icon">⇧</span>
+      <span class="depth-meter__label">DEPTH</span>
+    </div>
+    <div class="depth-meter__value" id="depthValue">0m</div>
+    <div class="depth-meter__track-wrap">
+      <div class="depth-meter__track">
+        <div class="depth-meter__fill" id="depthFill"></div>
+        <!-- Milestone markers on the bar -->
+        <div class="depth-marker" style="top:0%"></div>
+        <div class="depth-marker" style="top:18%"></div>
+        <div class="depth-marker" style="top:45%"></div>
+        <div class="depth-marker" style="top:73%"></div>
+        <div class="depth-marker" style="top:100%"></div>
+      </div>
+      <!-- Milestone labels column -->
+      <div class="depth-meter__milestones">
+        <div class="dm-label active" id="dmLabel0">
+          <span class="dm-label__depth">0m</span>
+          <span class="dm-label__name">Surface</span>
+        </div>
+        <div class="dm-label" id="dmLabel1">
+          <span class="dm-label__depth">200m</span>
+          <span class="dm-label__name">Sunlight</span>
+        </div>
+        <div class="dm-label" id="dmLabel2">
+          <span class="dm-label__depth">1,000m</span>
+          <span class="dm-label__name">Twilight</span>
+        </div>
+        <div class="dm-label" id="dmLabel3">
+          <span class="dm-label__depth">4,000m</span>
+          <span class="dm-label__name">Midnight</span>
+        </div>
+        <div class="dm-label" id="dmLabel4">
+          <span class="dm-label__depth">11km</span>
+          <span class="dm-label__name">Ocean Floor</span>
+        </div>
+      </div>
+    </div>
+    <div class="depth-meter__zone" id="depthZone">Surface</div>
+    <div class="depth-meter__pressure" id="depthPressure">1 atm</div>
+  </div>
+
+  <!-- Nav dots -->
+  <nav class="nav-dots" id="navDots" aria-label="Section navigation">
+    <a href="#hero"      class="nav-dot active" data-section="hero"      title="Surface"></a>
+    <a href="#sunlight"  class="nav-dot"        data-section="sunlight"  title="Sunlight Zone"></a>
+    <a href="#twilight"  class="nav-dot"        data-section="twilight"  title="Twilight Zone"></a>
+    <a href="#midnight"  class="nav-dot"        data-section="midnight"  title="Midnight Zone"></a>
+    <a href="#abyss"     class="nav-dot"        data-section="abyss"     title="The Abyss"></a>
+  </nav>
+
+  <!-- Sound toggle -->
+  <div class="sound-panel" id="soundPanel">
+    <button class="sound-toggle" id="soundToggle" aria-label="Toggle ocean sound">
+      <span id="soundIcon">🔇</span>
+    </button>
+    <span class="sound-label">OCEAN SOUNDS</span>
+  </div>
+
+  <!-- Achievement HUD Toast -->
+  <div class="achievement" id="achievement">
+    <div class="achievement__icon-wrap">
+      <div class="achievement__icon" id="achieveIcon">🏆</div>
+      <div class="achievement__glow"></div>
+    </div>
+    <div class="achievement__text">
+      <div class="achievement__title" id="achieveTitle">Achievement Unlocked!</div>
+      <div class="achievement__desc"  id="achieveDesc">You reached the deep ocean!</div>
+    </div>
+    <div class="achievement__shimmer"></div>
+  </div>
+
+  <!-- Creature Info Popup -->
+  <div class="creature-popup" id="creaturePopup" role="dialog" aria-modal="true">
+    <button class="popup-close" id="popupClose" aria-label="Close popup">
+      <span class="popup-close__x">✕</span>
+      <span class="popup-close__ring"></span>
+    </button>
+    <!-- Animated particles that burst on open -->
+    <div class="popup-particles" id="popupParticles"></div>
+    <!-- Top shimmer line -->
+    <div class="popup-shimmer"></div>
+    <!-- Creature emoji hero -->
+    <div class="popup-emoji-wrap">
+      <div class="popup-emoji" id="popupEmoji">🐠</div>
+      <div class="popup-emoji-ring"></div>
+      <div class="popup-emoji-ring popup-emoji-ring--2"></div>
+    </div>
+    <h3 class="popup-name" id="popupName">Clownfish</h3>
+    <div class="popup-badge" id="popupZone">Sunlight Zone</div>
+    <!-- Depth indicator mini-bar -->
+    <div class="popup-depth-bar">
+      <div class="popup-depth-bar__track">
+        <div class="popup-depth-bar__fill" id="popupDepthFill"></div>
+        <div class="popup-depth-bar__marker" id="popupDepthMarker"></div>
+      </div>
+      <div class="popup-depth-bar__labels">
+        <span>0m</span>
+        <span>Surface</span>
+        <span id="popupDepthLabel">50m</span>
+        <span>11,000m</span>
+      </div>
+    </div>
+    <p class="popup-desc" id="popupDesc"></p>
+    <!-- Fun fact callout -->
+    <div class="popup-funfact" id="popupFunfact">
+      <span class="popup-funfact__icon">💡</span>
+      <span class="popup-funfact__text" id="popupFunfactText">Did you know?</span>
+    </div>
+    <div class="popup-stats" id="popupStats"></div>
+    <!-- Decorative glow -->
+    <div class="popup-glow"></div>
+    <div class="popup-glow popup-glow--secondary"></div>
+  </div>
+  <div class="popup-backdrop" id="popupBackdrop"></div>
+
+  <!-- ══════════════════════ SECTION 1: HERO ══════════════════════ -->
+  <section id="hero" class="section section--hero">
+    <canvas id="waveCanvas" class="wave-canvas"></canvas>
+
+    <!-- Sky atmosphere -->
+    <div class="sky-gradient"></div>
+
+    <!-- Sun -->
+    <div class="sun">
+      <div class="sun-core"></div>
+      <div class="sun-halo"></div>
+      <div class="sun-ray sr--0"></div>
+      <div class="sun-ray sr--1"></div>
+      <div class="sun-ray sr--2"></div>
+      <div class="sun-ray sr--3"></div>
+      <div class="sun-ray sr--4"></div>
+      <div class="sun-ray sr--5"></div>
+      <div class="sun-ray sr--6"></div>
+      <div class="sun-ray sr--7"></div>
+    </div>
+
+    <!-- Clouds -->
+    <div class="clouds">
+      <div class="cloud cloud--1"></div>
+      <div class="cloud cloud--2"></div>
+      <div class="cloud cloud--3"></div>
+      <div class="cloud cloud--4"></div>
+      <div class="cloud cloud--5"></div>
+    </div>
+
+    <!-- Birds -->
+    <div class="birds">
+      <div class="bird bird--1">🕊</div>
+      <div class="bird bird--2">🦅</div>
+      <div class="bird bird--3">🕊</div>
+    </div>
+
+    <!-- Hero Content -->
+    <div class="hero-content" id="heroContent">
+      <div class="hero-badge">
+        <span class="hero-badge__dot"></span>
+        Frontend Odyssey Challenge
+      </div>
+      <h1 class="hero-title">
+        <span class="hero-title__line1">Dive Into</span>
+        <span class="hero-title__main">Ocean Depths</span>
+        <span class="hero-title__line3">An Interactive Journey</span>
+      </h1>
+      <p class="hero-desc">Scroll down to explore the mysteries of the underwater world — from the sunlit shallows to the darkest abyss 11km below.</p>
+      <div class="hero-cta">
+        <button class="btn-dive" id="btnDive">🤿 Begin Dive</button>
+      </div>
+      <div class="hero-scroll-indicator" id="scrollIndicator">
+        <span class="scroll-mouse">
+          <span class="scroll-wheel"></span>
+        </span>
+        <span class="scroll-text">Scroll to Dive</span>
+      </div>
+    </div>
+
+    <!-- Surface bubbles -->
+    <div class="surface-bubbles" id="surfaceBubbles"></div>
+
+    <!-- Surface fish -->
+    <div class="fish-container" id="heroFish" data-parallax="0.06">
+      <div class="fish fish--1" 
+           data-creature="fish" 
+           data-ambassador="true"
+           data-greeting="Welcome to the Surface! Above us is the sky, but below lies a world of wonder. I'm your guide for this journey — let's dive together!"
+           data-name="Tropical Butterflyfish" data-emoji="🐠" data-zone="Surface"
+           data-desc="These colorful fish are common in shallow tropical waters. They are known for their striking patterns and graceful swimming."
+           data-stats="Depth:5m|Size:15cm|Diet:Coral|Lifespan:7 yrs">🐠</div>
+      <div class="fish fish--2" style="top:40%; animation-delay: -5s;" data-emoji="🐟">🐟</div>
+    </div>
+
+    <!-- Seagulls -->
+    <div class="hero-particles" id="heroParticles"></div>
+
+    <!-- Depth Parallax Silhouettes (Hero) -->
+    <div class="parallax-bg-layer" data-parallax="0.02" style="bottom: 0; left: 10%; filter: blur(12px); opacity: 0.1;">⛰️</div>
+    <div class="parallax-bg-layer" data-parallax="0.04" style="bottom: -20px; right: 15%; filter: blur(8px); opacity: 0.15;">🌋</div>
+  </section>
+    <!-- Depth Parallax Silhouettes -->
+    <div class="parallax-bg-layer" data-parallax="0.03" style="filter: blur(6px); opacity: 0.15; bottom: 0; right: 10%;">🪸</div>
+    <div class="parallax-bg-layer" data-parallax="0.05" style="filter: blur(3px); opacity: 0.25; bottom: -20px; left: 5%;">🗻</div>
+
+  <!-- ══════════════════════ SECTION 2: SUNLIGHT ZONE ══════════════════════ -->
+  <section id="sunlight" class="section section--sunlight">
+    <!-- Depth Parallax Silhouettes (Sunlight) -->
+    <div class="parallax-bg-layer" data-parallax="0.03" style="bottom: 15%; right: 5%; filter: blur(10px); opacity: 0.12;">🪸</div>
+    <div class="parallax-bg-layer" data-parallax="0.05" style="bottom: 5%; left: 12%; filter: blur(6px); opacity: 0.2;">🗻</div>
+    <!-- Animated light rays through water -->
+    <div class="parallax-bg-layer" data-parallax="0.03" style="bottom: 15%; right: 5%; filter: blur(10px); opacity: 0.12;">🪸</div>
+    <div class="parallax-bg-layer" data-parallax="0.05" style="bottom: 5%; left: 12%; filter: blur(6px); opacity: 0.2;">🗻</div>
+    <!-- Animated light rays through water -->
+    <div class="light-rays" id="lightRays">
+      <div class="ray ray--1"></div>
+      <div class="ray ray--2"></div>
+      <div class="ray ray--3"></div>
+      <div class="ray ray--4"></div>
+      <div class="ray ray--5"></div>
+      <div class="ray ray--6"></div>
+    </div>
+
+    <!-- Bubbles -->
+    <div class="bubbles-container" id="sunlightBubbles" data-parallax="0.04"></div>
+
+    <!-- Whale (slow drifter) -->
+    <div class="whale-wrapper" id="whaleWrapper">
+      <div class="whale" id="whale"
+           data-creature="whale"
+           data-name="Blue Whale"
+           data-zone="Sunlight Zone"
+           data-emoji="🐋"
+           data-desc="The largest animal ever known to exist. Blue whales can reach 30 meters in length and weigh up to 200 tonnes. Their hearts are the size of a small car."
+           data-stats="Length:30m|Weight:200t|Sound:188dB|Lifespan:90 yrs">
+        🐋
+        <div class="whale-wake"></div>
+      </div>
+    </div>
+
+    <!-- Fish school -->
+    <div class="fish-container" id="fishContainer" data-parallax="0.08">
+      <div class="fish fish--1" id="fish1"
+           data-creature="fish"
+           data-ambassador="true"
+           data-greeting="Welcome to my home! Here in the Sunlight zone, life is bright, warm, and full of color. Dive deeper to see the mysteries unfold!"
+           data-name="Clownfish"
+           data-zone="Sunlight Zone"
+           data-emoji="🐠"
+           data-desc="Famous for their symbiotic relationship with sea anemones. Clownfish are immune to the anemone's sting and live within its tentacles for protection."
+           data-stats="Depth:50m|Size:11cm|Diet:Omnivore|Lifespan:6 yrs">🐠</div>
+
+      <div class="fish fish--2" id="fish2"
+           data-creature="fish"
+           data-name="Blue Tang"
+           data-zone="Sunlight Zone"
+           data-emoji="🐟"
+           data-desc="Made famous by the movie 'Finding Dory'. Blue tangs use their tail spine as a defensive weapon and can change color when stressed."
+           data-stats="Depth:40m|Size:31cm|Diet:Algae|Lifespan:20 yrs">🐟</div>
+
+      <div class="fish fish--3" id="fish3"
+           data-creature="fish"
+           data-name="Pufferfish"
+           data-zone="Sunlight Zone"
+           data-emoji="🐡"
+           data-desc="Can inflate to 3x its size when threatened. Contains tetrodotoxin, one of the most toxic substances on Earth — 1,200x more toxic than cyanide."
+           data-stats="Depth:100m|Size:90cm|Toxin:Lethal|Inflate:3x size">🐡</div>
+
+      <div class="fish fish--4" id="fish4"
+           data-creature="fish"
+           data-name="Great White Shark"
+           data-zone="Sunlight Zone"
+           data-emoji="🦈"
+           data-desc="The ocean's apex predator. Great whites can detect a single drop of blood in 100 liters of water from 5km away. They have 300 serrated triangular teeth."
+           data-stats="Depth:250m|Size:6m|Speed:56km/h|Sense:0.001ppm blood">🦈</div>
+
+      <div class="fish fish--5" id="fish5"
+           data-creature="fish"
+           data-name="Dolphin"
+           data-zone="Sunlight Zone"
+           data-emoji="🐬"
+           data-desc="Among the most intelligent marine mammals. Dolphins use echolocation, have unique signature whistles like names, and sleep with one eye open."
+           data-stats="Depth:300m|Speed:60km/h|IQ:High|Social:Yes">🐬</div>
+
+      <div class="fish fish--6" id="fish6"
+           data-creature="fish"
+           data-name="Sea Turtle"
+           data-zone="Sunlight Zone"
+           data-emoji="🐢"
+           data-desc="Ancient mariners that have existed for 110 million years. Sea turtles navigate using Earth's magnetic field and can hold their breath for 7 hours."
+           data-stats="Depth:300m|Age:110M yrs|Breath:7 hrs|Lifespan:80 yrs">🐢</div>
+
+      <div class="fish fish--7" id="fish7"
+           data-creature="fish"
+           data-name="Manta Ray"
+           data-zone="Sunlight Zone"
+           data-emoji="🦈"
+           data-desc="Gentle giants of the sea with wingspans up to 7 meters. Manta rays have the largest brain-to-body ratio of any fish and demonstrate self-awareness in mirror tests."
+           data-stats="Span:7m|Weight:3t|Brain:Largest|Diet:Plankton">🐟</div>
+
+      <div class="fish fish--8" id="fish8"
+           data-creature="fish"
+           data-name="Yellowfin Tuna"
+           data-zone="Sunlight Zone"
+           data-emoji="🐟"
+           data-desc="Among the fastest and strongest fish in the ocean. Yellowfin tuna can reach speeds of 75 km/h. They never stop swimming to maintain oxygen flow through their gills."
+           data-stats="Depth:150m|Speed:75km/h|Weight:180kg|Diet:Fish/Squid">🐟</div>
+    </div>
+
+    <!-- 3D Fish School (Three.js) -->
+    <div class="fish-school-3d" id="fishSchool3DContainer" aria-hidden="true"></div>
+    <div class="manta-container" id="mantaContainer" aria-hidden="true"></div>
+
+    <!-- Fish tooltip (lightweight hover) -->
+    <div class="hover-tip" id="hoverTip"></div>
+
+    <!-- Coral reef removed -->
+
+    <!-- Zone Info Card -->
+    <div class="zone-info glass-card" data-gsap-fade>
+      <div class="zone-badge zone-badge--sun">☀️ SUNLIGHT ZONE</div>
+      <div class="zone-depth-range">0 – 200m</div>
+      <h2 class="zone-title">The Euphotic Zone</h2>
+      <p class="zone-desc">Where sunlight penetrates and fuels a riot of life. 90% of all ocean life lives here, from coral gardens to migrating whales.</p>
+      <div class="zone-stats">
+        <div class="zs"><div class="zs__v">200m</div><div class="zs__l">Max Depth</div></div>
+        <div class="zs"><div class="zs__v">25°C</div><div class="zs__l">Temp</div></div>
+        <div class="zs"><div class="zs__v">90%</div><div class="zs__l">Ocean Life</div></div>
+        <div class="zs"><div class="zs__v">3 atm</div><div class="zs__l">Pressure</div></div>
+      </div>
+      <p class="zone-hint">🖱 Click any sea creature for facts</p>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════ SECTION 3: TWILIGHT ZONE ══════════════════════ -->
+  <section id="twilight" class="section section--twilight">
+    <!-- Mouse parallax layers -->
+    <div class="parallax-layer pl--1" id="parallaxLayer1"></div>
+    <div class="parallax-layer pl--2" id="parallaxLayer2"></div>
+    <div class="parallax-layer pl--3" id="parallaxLayer3"></div>
+
+    <!-- Particles -->
+    <div class="bubbles-container" id="twilightBubbles" data-parallax="0.03"></div>
+    <div class="particles-container" id="twilightParticles" data-parallax="0.06"></div>
+    <div class="glow-particle-layer" id="twilightGlow"></div>
+    
+    <!-- 3D Shark Integration (Transitionary between Sunlight and Twilight) -->
+    <div class="shark-container" id="sharkContainer" aria-hidden="false"></div>
+    <div class="shark-overlay-card glass-card" id="sharkOverlayCard" aria-hidden="true">
+      <div class="shark-badge">🦈 APEX PREDATOR</div>
+      <h3 class="shark-title">Great White Shark</h3>
+      <p class="shark-desc">The ocean's most feared hunter. Great whites can grow up to 6 meters and reach speeds of 40 km/h during a breach.</p>
+      <div class="shark-stats">
+        <div class="ss"><div class="ss__v">6m</div><div class="ss__l">Length</div></div>
+        <div class="ss"><div class="ss__v">40km/h</div><div class="ss__l">Top Speed</div></div>
+        <div class="ss"><div class="ss__v">11mo</div><div class="ss__l">Gestation</div></div>
+      </div>
+    </div>
+        Welcome to the Twilight Zone! I patrol these depths where light fades to darkness. My keen senses help me hunt in these mysterious waters.
+      </div>
+      <div class="shark-overlay-sub">SCROLL TO EXPLORE ↓</div>
+    </div>
+
+    <!-- Jellyfish cluster -->
+    <div class="jellyfish-container">
+      <div class="jellyfish jelly--1" id="jelly1"
+           data-creature="jelly"
+           data-ambassador="true"
+           data-greeting="As we go deeper, the light begins to fade. Welcome to the Twilight Zone! Here, the sun is just a memory, and creatures like me use faint biological light to navigate these cool, dim waters."
+           data-name="Moon Jellyfish"
+           data-zone="Twilight Zone"
+           data-emoji="🪼"
+           data-desc="One of the most widespread jellyfish species. Moon jellyfish are 95% water, have no brain or heart, and have survived over 500 million years — predating dinosaurs."
+           data-stats="Depth:1000m|Age:500M yrs|Body:95% water|Sting:Mild">
+        <div class="jelly-orb"></div>
+        <div class="jelly-tentacle-set">
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="jellyfish jelly--2" id="jelly2"
+           data-creature="jelly"
+           data-name="Lion's Mane Jellyfish"
+           data-zone="Twilight Zone"
+           data-emoji="🪼"
+           data-desc="The world's largest jellyfish, with tentacles stretching up to 36.5 meters — longer than a blue whale. Its sting can cause intense burning pain lasting hours."
+           data-stats="Depth:600m|Tentacles:36m|Bell:2.3m|Sting:Severe">
+        <div class="jelly-orb"></div>
+        <div class="jelly-tentacle-set">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="jellyfish jelly--3" id="jelly3"
+           data-creature="jelly"
+           data-name="Barrel Jellyfish"
+           data-zone="Twilight Zone"
+           data-emoji="🪼"
+           data-desc="The UK's largest jellyfish, shaped like a barrel with a frilly mouth instead of tentacles. Leatherback sea turtles exclusively eat this species."
+           data-stats="Depth:500m|Size:1.5m|Weight:35kg|Diet:Plankton">
+        <div class="jelly-orb"></div>
+        <div class="jelly-tentacle-set">
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="jellyfish jelly--4" id="jelly4"
+           data-creature="jelly"
+           data-name="Box Jellyfish"
+           data-zone="Twilight Zone"
+           data-emoji="🪼"
+           data-desc="The world's most venomous marine animal. Unlike other jellyfish, box jellyfish can actually navigate — they have 24 eyes and can actively hunt prey."
+           data-stats="Depth:200m|Venom:Deadly|Eyes:24|Speed:7.5km/h">
+        <div class="jelly-orb jelly-orb--box"></div>
+        <div class="jelly-tentacle-set">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- Lanternfish -->
+      <div class="fish fish--lantern" style="top:50%; right:10%;" 
+           data-creature="fish" 
+           data-name="Lanternfish" data-emoji="🐟" data-zone="Twilight Zone"
+           data-desc="Known for their bioluminescence, lanternfish help make up a large portion of the deep-sea biomass. They migrate to the surface at night to feed."
+           data-stats="Depth:600m|Glow:Photophores|Migration:Daily|Count:Billions">🐟</div>
+    </div>
+
+    <!-- Zone Info -->
+    <div class="zone-info zone-info--right glass-card glass-card--dark" data-gsap-fade>
+      <div class="zone-badge zone-badge--twilight">🌙 TWILIGHT ZONE</div>
+      <div class="zone-depth-range">200 – 1000m</div>
+      <h2 class="zone-title">The Mesopelagic</h2>
+      <p class="zone-desc">Light fades to pure bioluminescence. Creatures here evolved large eyes, transparent bodies, and living lights of their own. Move your mouse to alter the currents.</p>
+      <div class="zone-stats">
+        <div class="zs"><div class="zs__v">1000m</div><div class="zs__l">Max Depth</div></div>
+        <div class="zs"><div class="zs__v">4°C</div><div class="zs__l">Temp</div></div>
+        <div class="zs"><div class="zs__v">Dim</div><div class="zs__l">Light</div></div>
+        <div class="zs"><div class="zs__v">100 atm</div><div class="zs__l">Pressure</div></div>
+      </div>
+      <p class="zone-hint">🖱 Click jellyfish · Move mouse for parallax</p>
+    </div>
+
+    <div class="parallax-hint" id="parallaxHint">↔ Move mouse to disturb the currents</div>
+  </section>
+
+  <!-- ══════════════════════ SECTION 4: MIDNIGHT ZONE ══════════════════════ -->
+  <section id="midnight" class="section section--midnight">
+    <!-- Bio particles -->
+    <canvas class="bio-canvas" id="bioCanvas"></canvas>
+
+    <!-- Bioluminescent creatures -->
+    <div class="bio-creatures">
+      <div class="bio-creature bio--anglerfish" id="bioAnglerfish"
+           data-creature="bio"
+           data-ambassador="true"
+           data-greeting="Welcome to the Dark. You've entered the Midnight Zone, where no sunlight ever reaches. At 4,000 meters deep, we rely entirely on bioluminescence to hunt and survive in the crushing cold."
+           data-name="Deep Sea Anglerfish"
+           data-zone="Midnight Zone"
+           data-emoji="🎣"
+           data-desc="Uses a bioluminescent lure — modified from its dorsal spine — to attract prey in total darkness. Female anglerfish are 10x larger than males, who literally fuse into the female's body."
+           data-stats="Depth:4000m|Lure:Bioluminescent|Pressure:400 atm|Discovery:1891">
+        <div class="bio-body">🎣</div>
+        <div class="bio-lure" id="anglerLure"></div>
+        <div class="bio-glow-ring"></div>
+      </div>
+
+      <div class="bio-creature bio--squid" id="bioSquid"
+           data-creature="bio"
+           data-name="Giant Squid"
+           data-zone="Midnight Zone"
+           data-emoji="🦑"
+           data-desc="The largest invertebrate on Earth. Giant squids have eyes the size of dinner plates — the largest of any living animal — to capture the scarce bioluminescent light of the deep."
+           data-stats="Depth:900m|Length:13m|Eye:27cm|Speed:Fast">
+        <div class="bio-body">🦑</div>
+        <div class="bio-glow-ring"></div>
+      </div>
+
+      <div class="bio-creature bio--dragonfish" id="bioDragonfish"
+           data-creature="bio"
+           data-name="Black Dragonfish"
+           data-zone="Midnight Zone"
+           data-emoji="🐟"
+           data-desc="Produces deep red bioluminescent light that most deep-sea creatures cannot detect — making it an invisible predator with a built-in headlight. Its fangs are longer than its head."
+           data-stats="Depth:2000m|Light:Red bio|Fang:Extra-long|Size:26cm">
+        <div class="bio-body">🐟</div>
+        <div class="bio-glow-ring"></div>
+      </div>
+
+      <div class="bio-creature bio--eel" id="bioEel"
+           data-creature="bio"
+           data-name="Gulper Eel"
+           data-zone="Midnight Zone"
+           data-emoji="🐍"
+           data-desc="Has a mouth so enormous it can swallow prey larger than itself. Its jaw resembles a giant pelican beak. The glowing tail tip lures curious prey directly into its gape."
+           data-stats="Depth:3000m|Jaw:Enormous|Tail:Glowing|Size:75cm">
+        <div class="bio-body">🐍</div>
+        <div class="bio-glow-ring"></div>
+      </div>
+
+      <div class="bio-creature bio--viperfish" id="bioViperfish"
+           data-creature="bio"
+           data-name="Viperfish"
+           data-zone="Midnight Zone"
+           data-emoji="🦷"
+           data-desc="One of the fiercest predators of the deep, with needle-like fangs so long they cannot close its mouth. It impales prey at high speed using its first vertebra as a shock absorber."
+           data-stats="Depth:4500m|Fang:5cm|Speed:Strike|Glow:Photophores">
+        <div class="bio-body">🦷</div>
+        <div class="bio-glow-ring"></div>
+      </div>
+    </div>
+
+    <!-- Particles -->
+    <div class="midnight-particles" id="midnightParticles" data-parallax="0.05"></div>
+    <div class="glow-particle-layer" id="midnightGlow"></div>
+
+    <!-- Zone Info -->
+    <div class="zone-info glass-card glass-card--deepdark" data-gsap-fade>
+      <div class="zone-badge zone-badge--midnight">🔴 MIDNIGHT ZONE</div>
+      <div class="zone-depth-range">1000 – 4000m</div>
+      <h2 class="zone-title">The Bathypelagic</h2>
+      <p class="zone-desc">Zero sunlight. Crushing pressure. Yet life flourishes here, lit only by its own biological light. Hover creatures to reveal them from darkness.</p>
+      <div class="zone-stats">
+        <div class="zs"><div class="zs__v">4000m</div><div class="zs__l">Max Depth</div></div>
+        <div class="zs"><div class="zs__v">2°C</div><div class="zs__l">Temp</div></div>
+        <div class="zs"><div class="zs__v">0%</div><div class="zs__l">Sunlight</div></div>
+        <div class="zs"><div class="zs__v">400 atm</div><div class="zs__l">Pressure</div></div>
+      </div>
+      <p class="zone-hint">🖱 Hover to reveal · Click for facts</p>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ SECTION 5: ABYSS ══════════════════════ -->
+  <section id="abyss" class="section section--abyss">
+    <!-- Atmospheric glow -->
+    <div class="abyss-glow"></div>
+    <div class="glow-particle-layer" id="abyssGlow"></div>
+
+    <!-- Submarine with spotlight -->
+    <div class="submarine-wrapper" id="submarineWrapper"
+         data-creature="sub"
+         data-name="DSV Abyss Explorer"
+         data-zone="The Abyss"
+         data-emoji="🛟"
+         data-desc="A state-of-the-art deep-sea submersible rated to withstand 11,000m depth. Equipped with titanium pressure spheres, 3D sonar mapping array, dual halogen spotlights, and a pair of robotic sample-collection arms. Only 3 vessels of this class exist."
+         data-funfact="At maximum depth the pressure on the hull is equivalent to 50 jumbo jets stacked on top of you."
+         data-stats="Max Depth:11,000m|Crew:3|Hull Pressure:1,100 atm|Top Speed:3 knots">
+
+      <!-- Dual spotlight cones -->
+      <div class="sub-spotlight sub-spotlight--primary" id="subSpotlight"></div>
+      <div class="sub-spotlight sub-spotlight--ambient"></div>
+
+      <!-- The submarine itself -->
+      <div class="submarine" id="submarine">
+        <div class="sub-hull">
+          <!-- Main body -->
+          <div class="sub-body"></div>
+          <!-- Conning tower -->
+          <div class="sub-tower"></div>
+          <!-- Portholes with interior glow -->
+          <div class="sub-porthole sub-porthole--1"><span class="porthole-glow"></span></div>
+          <div class="sub-porthole sub-porthole--2"><span class="porthole-glow"></span></div>
+          <div class="sub-porthole sub-porthole--3"><span class="porthole-glow"></span></div>
+          <!-- Propeller -->
+          <div class="sub-propeller" id="subPropeller">
+            <span class="blade blade--1"></span>
+            <span class="blade blade--2"></span>
+            <span class="blade blade--3"></span>
+            <span class="prop-hub"></span>
+          </div>
+          <!-- Front lens / headlight -->
+          <div class="sub-headlight"></div>
+        </div>
+
+        <!-- Sonar ping rings -->
+        <div class="sub-sonar-ring sub-sonar-ring--1" id="subSonarRing"></div>
+        <div class="sub-sonar-ring sub-sonar-ring--2"></div>
+        <div class="sub-sonar-ring sub-sonar-ring--3"></div>
+
+        <!-- Bubble trail -->
+        <div class="sub-bubbles" id="subBubbles"></div>
+      </div>
+
+      <!-- Floating HUD label -->
+      <div class="sub-label">
+        <span class="sub-label__ping"></span>
+        DSV Abyss Explorer · <em>Click to scan</em>
+      </div>
+    </div>
+
+    <!-- Abyss creatures -->
+    <div class="abyss-life">
+      <div class="abyss-creature ac-1" id="abyssA"
+           data-creature="abyss"
+           data-name="Hydrothermal Tube Worm"
+           data-zone="The Abyss"
+           data-emoji="🪱"
+           data-desc="Live near hydrothermal vents without sunlight. They harbor chemosynthetic bacteria in their tissues, converting sulfur compounds into energy — the foundation of the vent ecosystem."
+           data-stats="Depth:2500m|Size:2m|No:Sunlight|Life:Bacteria">🪱</div>
+
+      <div class="abyss-creature ac-2" id="abyssB"
+            data-creature="abyss"
+            data-ambassador="true"
+            data-greeting="You have reached the end of the line! We are 11,000 meters down in the Hadal Zone. It’s a silent, freezing desert, and yet, life finds a way. Thank you for diving with me!"
+            data-name="Dumbo Octopus"
+           data-zone="The Abyss"
+           data-emoji="🐙"
+           data-desc="The deepest known octopus, named for ear-like fins that resemble Dumbo the elephant. They flap their fins to hover over the seafloor and can consume prey whole."
+           data-stats="Depth:7000m|Fin:Ear-like|Movement:Swimming|Feed:Whole prey">🐙</div>
+
+          data-stats="Depth:8336m|Record:Deepest fish|Body:Gelatinous|Pores:Pressure-adapted">🐟</div>
+
+      <div class="abyss-creature ac-4" id="abyssD"
+           data-creature="abyss"
+           data-name="Frilled Shark"
+           data-zone="The Abyss"
+           data-emoji="🦈"
+           data-desc="Often called a 'living fossil,' the frilled shark has primitive features like 300 needle-like teeth and six pairs of frilly gills. It's rare to see them so deep."
+           data-stats="Depth:1500m+|Teeth:300|Gills:6 pairs|Status:Rare">🦈</div>
+
+      <div class="abyss-creature ac-5" id="abyssE"
+           data-creature="abyss"
+           data-name="Giant Squid"
+           data-zone="The Abyss"
+           data-emoji="🦑"
+           data-desc="A legend of the deep. Giant squids can grow to 13 meters and have eyes the size of basketballs to detect faint light in the dark."
+           data-stats="Depth:1000m+|Size:13m|Eyes:30cm|Architeuthis:Yes">🦑</div>
+    </div>
+
+    <!-- Ocean floor -->
+    <div class="ocean-floor">
+      <div class="floor-sediment"></div>
+      <div class="floor-rocks">
+        <span>🪨</span><span>🪨</span><span>🪨</span><span>🪨</span>
+        <span>🪨</span><span>🪨</span><span>🪨</span><span>🪨</span>
+        <span>🪨</span><span>🪨</span><span>🪨</span><span>🪨</span>
+      </div>
+      <div class="floor-vents">
+        <div class="vent"><div class="vent-pipe"></div><div class="vent-smoke v1"></div><div class="vent-smoke v2"></div></div>
+        <div class="vent"><div class="vent-pipe"></div><div class="vent-smoke v1"></div></div>
+        <div class="vent"><div class="vent-pipe"></div><div class="vent-smoke v1"></div><div class="vent-smoke v2"></div><div class="vent-smoke v3"></div></div>
+      </div>
+    </div>
+
+    <!-- Final storytelling card removed -->
+
+    <!-- Sonar overlay -->
+    <div class="sonar-overlay" id="sonarOverlay">
+      <div class="sonar-ring sr1"></div>
+      <div class="sonar-ring sr2"></div>
+      <div class="sonar-ring sr3"></div>
+      <div class="sonar-ring sr4"></div>
+      <p class="sonar-text">SONAR ACTIVE<br><span id="sonarReadout">Scanning...</span></p>
+    </div>
+  </section>
+
+  <!-- Three.js (r128) & Loaders -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
